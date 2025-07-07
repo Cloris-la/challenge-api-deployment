@@ -14,7 +14,19 @@ def predict(dataInput):
 
 #for testing purposes
 df = pd.read_csv("model/data_cleaned.csv")
-#print(*df.columns, sep="\n")
+column_mapping = {
+    'haslift': 'lift',
+    'hasgarden': 'garden',
+    'hasswimmingpool': 'swimmingpool',
+    'hasterrace': 'terrace',
+    'hasparking': 'parking',
+    'epcscore_encoded': 'epcscore',
+    'buildingcondition_encoded': 'building_state',
+    'type_encoded': 'property_type'
+}
+
+df.rename(columns=column_mapping, inplace=True)
+
 print(df.iloc[2].value_counts())
 
 import random

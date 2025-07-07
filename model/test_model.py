@@ -7,6 +7,19 @@ model.load_model('model/robocop_model.cbm')
 
 df = pd.read_csv("model/data_cleaned.csv")
 
+column_mapping = {
+    'haslift': 'lift',
+    'hasgarden': 'garden',
+    'hasswimmingpool': 'swimmingpool',
+    'hasterrace': 'terrace',
+    'hasparking': 'parking',
+    'epcscore_encoded': 'epcscore',
+    'buildingcondition_encoded': 'building_state',
+    'type_encoded': 'property_type'
+}
+
+df.rename(columns=column_mapping, inplace=True)
+
 indexes = random.sample(range(len(df)), 10)
 
 for i in indexes:
