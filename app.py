@@ -1,6 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from preprocessing.cleaning_data import preprocess
 from predict.prediction import predict
+
 
 app = FastAPI()
 
@@ -14,6 +15,7 @@ def explain_prediction_format():
         "message": "POST to /predict with JSON like: { 'data': { 'area': 120, ... } }"
     }
 
+
 @app.post("/predict")
 def predict_route(request: dict):
     try:
@@ -21,13 +23,21 @@ def predict_route(request: dict):
         if not house_data:
             raise HTTPException(status_code=400, detail="Missing 'data' field")
 
-        processed = preprocess(house_data)
-        prediction = predict(processed)
+        df_processed, warning = preprocess(house_data)
 
-        return {"prediction": prediction, "status_code": 200}
+        if df_processed is None:
+            raise HTTPException(status_code=400, detail=warning)
+
+        prediction = predict(df_processed)
+
+        response = {"prediction": prediction, "status_code": 200}
+        if warning:
+            response["warning"] = warning
+
+        return response
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    except Exception:
+    except Exception as e:
         raise HTTPException(status_code=500, detail="Internal server error")
