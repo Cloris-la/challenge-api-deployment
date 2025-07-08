@@ -1,6 +1,7 @@
 import sys
 import os
 import traceback
+import uvicorn
 
 print("🚀 Starting ImmoEliza API...")
 
