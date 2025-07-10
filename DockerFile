@@ -19,5 +19,5 @@ RUN pip install -r requirements.txt
 # 6. Expose the default FastAPI port
 EXPOSE 8000
 
-# 7. Run the API with uvicorn
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Command to run app
+CMD ["python", "app.py"]
