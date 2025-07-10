@@ -336,13 +336,10 @@ The implementation focuses on:
 - Professional documentation
 - Robust data validation
 
-**Contributors:** Jordi(https://github.com/bljordi78.git)
-
-                  Mouske(https://github.com/Mouske.git)
-                  
-                  Cloris_F_Chen(https://github.com/Cloris-la.git)
+**Contributors:** Jordi(https://github.com/bljordi78.git)  
+                  Mouske(https://github.com/Mouske.git)  
+                  Cloris_F_Chen(https://github.com/Cloris-la.git)  
 **Developer:** Cloris F. Chen  
 **Branch:** `Cloris_F_Chen_Deployment`  
-**Deployment:** Render  Streamlit
+**Deployment:** Render  Streamlit  
 **Last Updated:** July 2025
->>>>>>> f083ea5497c82ee6f9e9103fa363098a8263507e
