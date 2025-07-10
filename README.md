@@ -337,7 +337,9 @@ The implementation focuses on:
 - Robust data validation
 
 **Contributors:** Jordi(https://github.com/bljordi78.git)
+
                   Mouske(https://github.com/Mouske.git)
+                  
                   Cloris_F_Chen(https://github.com/Cloris-la.git)
 **Developer:** Cloris F. Chen  
 **Branch:** `Cloris_F_Chen_Deployment`  
