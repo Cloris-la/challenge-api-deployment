@@ -1,7 +1,6 @@
 import sys
 import os
 import traceback
-import uvicorn
 
 print("🚀 Starting ImmoEliza API...")
 
@@ -11,10 +10,6 @@ try:
     from typing import Optional
     import uvicorn
     
-    # Import modules
-    from preprocessing.cleaning_data import preprocess
-    from predict.prediction import predict
-    
     app = FastAPI(
         title="ImmoEliza House Price Prediction API",
         description="Simplified API - Contains only fields actually used by the model",
@@ -23,37 +18,100 @@ try:
     
     # Only fields actually needed by the model
     class HouseData(BaseModel):
-        area: int
-        property_type: str = Field(alias="property-type")
-        bedrooms_number: int = Field(alias="bedrooms-number")
-        zip_code: int = Field(alias="zip-code")
+        # Required fields
+        area: int = Field(..., 
+                        description="Living area in square meters (m²)",
+                        example=100
+                        )  
         
-        # Optional fields
-        garden: Optional[bool] = None
-        swimming_pool: Optional[bool] = Field(None, alias="swimming-pool")
-        terrace: Optional[bool] = None
-        building_state: Optional[str] = Field(None, alias="building-state")
-        parking: Optional[bool] = None
-        lift: Optional[bool] = None
-        epc_score: Optional[str] = Field(None, alias="epc-score")
+        property_type: str = Field(..., alias="property-type", 
+                                 description="Property type. Must be: HOUSE, APARTMENT, or OTHERS (case insensitive)", 
+                                 example="HOUSE")
         
-        # Received but unused fields
-        land_area: Optional[int] = Field(None, alias="land-area")
-        garden_area: Optional[int] = Field(None, alias="garden-area")
-        equipped_kitchen: Optional[bool] = Field(None, alias="equipped-kitchen")
-        full_address: Optional[str] = Field(None, alias="full-address")
-        furnished: Optional[bool] = None
-        open_fire: Optional[bool] = Field(None, alias="open-fire")
-        terrace_area: Optional[int] = Field(None, alias="terrace-area")
-        facades_number: Optional[int] = Field(None, alias="facades-number")
+        bedrooms_number: int = Field(..., alias="bedrooms-number", 
+                                   description="Number of bedrooms", 
+                                   example=3
+                                   )  
+        
+        zip_code: int = Field(..., alias="zip-code", 
+                            description="Belgian postal code. Format: 4-digit number (1000-9999)", 
+                            example=1000,
+                            ge=1000, le=9999)  # Strict range limit
+        
+        # Optional fields - Only those actually used by the model
+        garden: Optional[bool] = Field(None, 
+                                     description="Has garden. true=has garden, false=no garden", 
+                                     example=True)
+        
+        swimming_pool: Optional[bool] = Field(None, alias="swimming-pool", 
+                                            description="Has swimming pool. true=has pool, false=no pool", 
+                                            example=False)
+        
+        terrace: Optional[bool] = Field(None, 
+                                      description="Has terrace/balcony. true=has terrace, false=no terrace", 
+                                      example=True)
+        
+        parking: Optional[bool] = Field(None, 
+                                      description="Has parking space. true=has parking, false=no parking", 
+                                      example=True)
+        
+        lift: Optional[bool] = Field(None, 
+                                   description="Has elevator/lift. true=has elevator, false=no elevator", 
+                                   example=False)
+        
+        building_state: Optional[str] = Field(None, alias="building-state",
+                                            description="Building condition. Must be: NEW, GOOD, TO RENOVATE, JUST RENOVATED, TO BE DONE UP, or TO REBUILD (case insensitive)",
+                                            example="GOOD")
+        
+        epc_score: Optional[str] = Field(None, alias="epc-score",
+                                       description="Energy Performance Certificate score. Must be: A++, A+, A, B, C, D, E, F, G (case insensitive)",
+                                       example="C")
+        
+        # Field validation with clear error messages
+        @field_validator('property_type')
+        def validate_property_type(cls, v):
+            # Convert to uppercase for comparison
+            v_upper = v.upper() if isinstance(v, str) else v
+            allowed = ['HOUSE', 'APARTMENT', 'OTHERS']
+            
+            if v_upper not in allowed:
+                raise ValueError(f'Property type must be one of: HOUSE, APARTMENT, or OTHERS (case insensitive). You entered: "{v}"')
+            return v_upper
+        
+        @field_validator('building_state')
+        def validate_building_state(cls, v):
+            if v is None:
+                return v
+            
+            # Convert to uppercase for comparison
+            v_upper = v.upper() if isinstance(v, str) else v
+            allowed = ['NEW', 'GOOD', 'TO RENOVATE', 'JUST RENOVATED', 'TO BE DONE UP','TO REBUILD']
+            
+            if v_upper not in allowed:
+                allowed_readable = ['NEW', 'GOOD', 'TO RENOVATE', 'JUST RENOVATED','TO BE DONE UP', 'TO REBUILD']
+                raise ValueError(f'Building state must be one of: {", ".join(allowed_readable)} (case insensitive). You entered: "{v}"')
+            return v_upper
+        
+        @field_validator('epc_score')
+        def validate_epc_score(cls, v):
+            if v is None:
+                return v
+            
+            # Convert to uppercase for comparison
+            v_upper = v.upper() if isinstance(v, str) else v
+            allowed = ['A++', 'A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G']
+            
+            if v_upper not in allowed:
+                raise ValueError(f'EPC score must be one of: {", ".join(allowed)} (case insensitive). You entered: "{v}"')
+            return v_upper
     
     class PredictionRequest(BaseModel):
         data: HouseData
     
     class PredictionResponse(BaseModel):
-        prediction: Optional[float]
-        status_code: Optional[int]
-    
+        prediction: Optional[float] = Field(None, description="Predicted price in EUR")
+        status_code: Optional[int] = Field(None, description="Status code: 200=success, 400=input error, 500=server error")
+
     @app.get("/")
     def root():
         """
@@ -77,23 +135,14 @@ try:
                 "bedrooms-number": "int - Number of bedrooms",
                 "zip-code": "int - Belgian postal code (1000-9999)"
             },
-            "optional_fields_used_by_model": {
-                "garden": "bool - Has garden",
-                "swimming-pool": "bool - Has swimming pool",
-                "terrace": "bool - Has terrace",
-                "building-state": "string - Building condition",
-                "parking": "bool - Has parking",
-                "lift": "bool - Has elevator",
-                "epc-score": "string - Energy certificate"
-            },
-            "example": {
-                "data": {
-                    "area": 120,
-                    "property-type": "HOUSE",
-                    "bedrooms-number": 3,
-                    "zip-code": 1000,
-                    "garden": True
-                }
+            
+            "optional_fields": {
+                "garden": "bool - Has garden (affects prediction)",
+                "swimming-pool": "bool - Has swimming pool (affects prediction)",
+                "terrace": "bool - Has terrace (affects prediction)",
+                "parking": "bool - Has parking space (affects prediction)",
+                "lift": "bool - Has elevator (affects prediction)",
+                "building-state": "string - Building condition: NEW | GOOD | TO RENOVATE | JUST RENOVATED | TO BE DONE UP | TO REBUILD (affects prediction)"
             }
         }
     

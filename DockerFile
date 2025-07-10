@@ -1,22 +1,19 @@
-# Starts from the python 3.10 official docker image
+# Use Python 3.10 image
 FROM python:3.10-slim
 
-# Create a folder "app" at the root of the image
-RUN mkdir /app
-
-# Set working directory
+# Set working directory to /app
 WORKDIR /app
 
-# 3. Copy project files into the container
-COPY . /app
+# Copy requirements.txt first (for caching)
+COPY requirements.txt .
 
-# Update pip
-RUN pip install --upgrade pip
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install dependencies from "requirements.txt"
-RUN pip install -r requirements.txt
+# Copy the rest of project files into /app
+COPY . .
 
-# 6. Expose the default FastAPI port
+# Expose port (FastAPI default:8000)
 EXPOSE 8000
 
 # Command to run app
